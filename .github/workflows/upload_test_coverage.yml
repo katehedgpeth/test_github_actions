@@ -32,5 +32,6 @@ jobs:
             });
             var fs = require('fs');
             fs.writeFileSync('${{github.workspace}}/test-coverage.zip', Buffer.from(download.data));
-      - run: unzip ./test-coverage.zip
+      - run: unzip test-coverage.zip
+      - run: npm install -g coveralls
       - run: cat lcov.info | ./node_modules/coveralls/bin/coveralls.js
