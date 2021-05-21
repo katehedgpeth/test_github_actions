@@ -10,17 +10,25 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     if: >
-      ${{
-        github.event.workflow_run.event == 'push' &&
-        github.event.workflow_run.conclusion == 'success'
-      }}
+      ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: "Download coverage report artifact"
-        uses: actions/download-artifact@v2
-        with:
-          name: test-coverage
-          path: ./coverage
-
-      - name: "Show that file was downloaded"
-        run: ll
-        working-directory: ./coverage
+        uses: actions/github-script@v3.1.0
+        script: |
+          var artifacts = await github.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: ${{ github.event.workflow_run.id }},
+          });
+          var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+            return artifact.name == "test-coverage"
+          })[0];
+          var download = await github.actions.downloadArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: matchArtifact.id,
+              archive_format: 'zip',
+          });
+          var fs = require('fs');
+          fs.writeFileSync('${{github.workspace}}/test-coverage.zip', Buffer.from(download.data));
+      - run: unzip test-coverage.zip
