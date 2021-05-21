@@ -21,17 +21,28 @@ jobs:
                 repo: context.repo.repo,
                 run_id: ${{ github.event.workflow_run.id }},
             });
-            var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
-              return artifact.name == "test-coverage"
-            })[0];
-            var download = await github.actions.downloadArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: matchArtifact.id,
-                archive_format: 'zip',
+            var testCoverage = artifacts.data.artifacts.find(
+              (artifact) => artifact.name == "test-coverage"
+            );
+            var coverallsFolder = artifacts.data.artifacts.find(
+              (artifact) => artifact.name == "coveralls_folder"
+            )
+            var artifact = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              archive_format: 'zip',
+            }
+            var testCoverageZip = await github.actions.downloadArtifact({
+              ...artifact,
+              artifact_id: testCoverage.id
             });
+            var coverallsFolderZip = await github.actions.downloadArtifact({
+              ...artifact,
+              artifact_id: coverallsFolder.id
+            })
             var fs = require('fs');
-            fs.writeFileSync('${{github.workspace}}/test-coverage.zip', Buffer.from(download.data));
+            fs.writeFileSync('${{github.workspace}}/test-coverage.zip', Buffer.from(testCoverageZip.data));
+            fs.writeFileSync('${{github.workspace}}/coveralls_folder.zip', Buffer.from(coverallsFolderZip.data));
       - run: unzip test-coverage.zip
-      - run: npm install -g coveralls
-      - run: cat lcov.info | ./node_modules/coveralls/bin/coveralls.js
+      - run: unzip ./coveralls_folder.zip
+      - run: cat lcov.info | ./coveralls/bin/coveralls.js

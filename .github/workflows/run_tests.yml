@@ -8,7 +8,17 @@ jobs:
       - uses: actions/setup-node@v1
       - run: npm install
       - run: npm run test:github
-      - uses: actions/upload-artifact@v2
+      - name: Upload test coverage file
+        uses: actions/upload-artifact@v2
         with:
           name: test-coverage
           path: ./coverage/lcov.info
+      - name: Make coveralls folder outside of node_modules
+        run: mkdir coveralls
+      - name: Copy coveralls folder from node_modules
+        run: mv ./node_modules/coveralls ./coveralls/coveralls
+      - name: Upload coveralls folder from node_modules
+        uses: actions/upload-artifact@v2
+        with:
+          name: coveralls_folder
+          path: ./coveralls
